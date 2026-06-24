@@ -1,0 +1,10 @@
+const KAPPA_CIRCLE = 0.551915024494; const KAPPA_CORNER = 0.552228474;
+export function shapeToD(el: Element): string | null {
+  const tag = el.tagName.toLowerCase().replace(/.*:/, ''); const n = (s: string) => parseFloat(el.getAttribute(s) || '0') || 0;
+  if (tag === 'rect') { const x = n('x'), y = n('y'), w = n('width'), h = n('height'); let rx = n('rx'); let ry = n('ry'); if (!rx && !ry) { rx = 0; ry = 0; } else if (!rx) rx = ry; else if (!ry) ry = rx; rx = Math.min(rx, w / 2); ry = Math.min(ry, h / 2); if (rx === 0 && ry === 0) return `M${x},${y}H${x+w}V${y+h}H${x}Z`; const kx = rx * KAPPA_CORNER; const ky = ry * KAPPA_CORNER; return `M${x+rx},${y}H${x+w-rx}C${x+w-rx+kx},${y},${x+w},${y+ry-ky},${x+w},${y+ry}V${y+h-ry}C${x+w},${y+h-ry+ky},${x+w-rx+kx},${y+h},${x+w-rx},${y+h}H${x+rx}C${x+rx-kx},${y+h},${x},${y+h-ry+ky},${x},${y+h-ry}V${y+ry}C${x},${y+ry-ky},${x+rx-kx},${y},${x+rx},${y}Z`; }
+  if (tag === 'circle') { const cx = n('cx'), cy = n('cy'), r = n('r'); const k = r * KAPPA_CIRCLE; return `M${cx-r},${cy}C${cx-r},${cy-k} ${cx-k},${cy-r} ${cx},${cy-r}C${cx+k},${cy-r} ${cx+r},${cy-k} ${cx+r},${cy}C${cx+r},${cy+k} ${cx+k},${cy+r} ${cx},${cy+r}C${cx-k},${cy+r} ${cx-r},${cy+k} ${cx-r},${cy}Z`; }
+  if (tag === 'ellipse') { const cx = n('cx'), cy = n('cy'), rx = n('rx'), ry = n('ry'); const kx = rx * KAPPA_CIRCLE; const ky = ry * KAPPA_CIRCLE; return `M${cx-rx},${cy}C${cx-rx},${cy-ky},${cx-kx},${cy-ry},${cx},${cy-ry}C${cx+kx},${cy-ry},${cx+rx},${cy-ky},${cx+rx},${cy}C${cx+rx},${cy+ky},${cx+kx},${cy+ry},${cx},${cy+ry}C${cx-kx},${cy+ry},${cx-rx},${cy+ky},${cx-rx},${cy}Z`; }
+  if (tag === 'polygon' || tag === 'polyline') { const pts = (el.getAttribute('points') || '').trim().split(/[\s,]+/).map(Number); if (pts.length < 4) return null; let d = `M${pts[0]},${pts[1]}`; for (let i = 2; i + 1 < pts.length; i += 2) d += `L${pts[i]},${pts[i+1]}`; return tag === 'polygon' ? d + 'Z' : d; }
+  if (tag === 'line') { return `M${n('x1')},${n('y1')}L${n('x2')},${n('y2')}`; }
+  return null;
+}

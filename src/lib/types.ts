@@ -1,0 +1,14 @@
+export interface Matrix { a: number; b: number; c: number; d: number; e: number; f: number; }
+export interface GradStop { offset: number; amColor: string; cssHex: string; }
+export interface GradientInfo { type: string; stops: GradStop[]; gradUnits: string; pStartSvg: { x: number; y: number }; pEndSvg: { x: number; y: number }; }
+export interface ColorInfo { amColor: string; cssHex: string; isGradient?: boolean; gradType?: string; gradStartAM?: string; gradEndAM?: string; gradStops?: GradStop[]; gradInfo?: GradientInfo; }
+export interface StrokeInfo { raw: string | null; width: number | null; isStrokeOnly: boolean; linecap: string | null; linejoin: string | null; }
+export interface ParsedPath { el: Element; d: string; index: number; label: string; layerName: string | null; groupPath: string[]; isFromLayer: boolean; color: ColorInfo | null; svgStroke: StrokeInfo; mat: Matrix | null; hasMatrix: boolean; layerOpacity: number; clipPathRef: string | null; clipType: string | null; clipGroupMat: Matrix | null; }
+export interface SvgDims { vbX: number; vbY: number; vbW: number; vbH: number; W: number; H: number; }
+export interface ParseResult { parsedPaths: ParsedPath[]; svgCloneHtml: string; svgDims: SvgDims | null; hasAiMatrix: boolean; strokeOnlyCount: number; hasOnlyRaster: boolean; classMap: Record<string, Record<string, string>>; gradMap: Record<string, GradientInfo>; clipperMap: Record<string, { d: string; mat: Matrix | null }>; }
+export interface ConvertSettings { targetW: number; targetH: number; fps: number; startTime: number; endTime: number; fillType: string; gradStart: string; gradEnd: string; useStroke: boolean; strokeSize: number; strokeJoin: string; strokeColor: string; useStrokeColor: boolean; groupMode: string; useShapePrim: boolean; projectName: string; svgFileName: string; }
+export interface ConvertResult { xml: string; statusText: string; filename: string; }
+export interface ShapeOpts { fillType: string; blending: string; gradStart: string; gradEnd: string; gradType: string; useStroke: boolean; strokeSize: number; strokeJoin: string; strokeColor: string; useStrokeColor: boolean; startTime: number; endTime: number; tcx: number; tcy: number; globalScale: number; vbCx: number; vbCy: number; canvasW: number; canvasH: number; fps: number; layerOpacity?: number; _isSvgGradient?: boolean; _gradStartAM?: string; _gradEndAM?: string; _gradStartEnd?: { start: string; end: string }; strokeCap?: string; primitiveScaleX?: number; primitiveScaleY?: number; }
+export interface ShapeItem extends ParsedPath { amPath: string; fillColor: string; shapeOpts: ShapeOpts; objTcx: number; objTcy: number; clipGroupMat: Matrix | null; primitiveGroupMat: Matrix | null; hasComplexGroupMat: boolean; }
+export interface TreeNode { items: ShapeItem[]; children: Map<string, TreeNode>; }
+export interface DetectedShape { type: string; cx: number; cy: number; w: number; h: number; props: string[]; }
