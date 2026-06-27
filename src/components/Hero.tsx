@@ -12,12 +12,34 @@ export default function Hero({ onFileLoaded, onOpenCode, onOpenGuide }: HeroProp
 
   function handleFile(file: File) {
     if (!file) return;
-    if (!file.name.toLowerCase().endsWith('.svg')) { alert('File must be .svg format'); return; }
+    
+    // Improved validation: check both extension and MIME type
+    const fileName = file.name.toLowerCase();
+    const isValidExtension = fileName.endsWith('.svg');
+    const isValidType = file.type.includes('svg') || file.type.includes('xml') || file.type === '';
+    
+    if (!isValidExtension && !isValidType) { 
+      alert(`Invalid file format. Expected SVG file, got: ${file.name}\n\nPlease select a valid .svg file.`); 
+      return; 
+    }
+    
     const reader = new FileReader();
     reader.onload = e => {
       const txt = e.target?.result as string;
+      
+      // Validate SVG content
+      const trimmed = txt.trim();
+      if (!trimmed.startsWith('<svg') && !trimmed.startsWith('<?xml')) {
+        alert('File does not appear to be a valid SVG. Please check the file content.');
+        return;
+      }
+      
       const name = file.name.replace(/\.svg$/i, '').replace(/[^a-zA-Z0-9_\-]/g, '_');
       onFileLoaded(txt, name);
+    };
+    reader.onerror = () => {
+      alert('Failed to read file. Please try again.');
+      console.error('FileReader error for:', file.name);
     };
     reader.readAsText(file);
   }
@@ -53,9 +75,21 @@ export default function Hero({ onFileLoaded, onOpenCode, onOpenGuide }: HeroProp
       hero.classList.remove('drag-over');
     };
     const onDrop = (e: DragEvent) => {
-      e.preventDefault(); hero.classList.remove('drag-over');
+      e.preventDefault(); 
+      hero.classList.remove('drag-over');
       const file = e.dataTransfer?.files[0];
-      if (file && file.name.endsWith('.svg')) handleFile(file);
+      if (file) {
+        // Validate dropped file
+        const fileName = file.name.toLowerCase();
+        const isValidExtension = fileName.endsWith('.svg');
+        const isValidType = file.type.includes('svg') || file.type.includes('xml') || file.type === '';
+        
+        if (!isValidExtension && !isValidType) {
+          alert(`Invalid file dropped. Please drop a valid .svg file.`);
+          return;
+        }
+        handleFile(file);
+      }
     };
     document.addEventListener('dragover', onDragOver);
     document.addEventListener('dragleave', onDragLeave);

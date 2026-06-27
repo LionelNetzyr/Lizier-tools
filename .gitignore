@@ -1,6 +1,42 @@
 ```
+# Build artifacts
+dist/
+build/
+*.css
+*.js
+*.svg
+*.html
+*.jpg
+*.png
+*.gif
+*.webp
+
 # Dependencies
 node_modules/
+
+# Environment
+.env
+.env.local
+.env.*
+
+# Logs
+*.log
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
 
 # Python
 __pycache__/
@@ -8,56 +44,26 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
-env/
-venv/
-.venv/
-.ENV
-.pip/
-.mypy_cache/
-.pytest_cache/
-
-# Build outputs
-dist/
-build/
+*.so
 *.egg-info/
-.coverage
-htmlcov/
-coverage/
+.eggs/
 
-# Logs
-*.log
+# Node.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Environment variables
-.env
-.env.local
-.env.*
-!.env.example
-
-# IDE specific
-.vscode/
-.idea/
-*.swp
-*.swo
-*.tmp
-
-# Compiled files
+# Compiled
 *.class
 *.o
+*.obj
+*.exe
+*.dll
 *.so
 *.a
-*.dll
-*.exe
 *.out
-*.tar.gz
+
+# Compressed
 *.zip
 *.gz
 *.tar
@@ -76,4 +82,8 @@ Thumbs.db
 *.Z
 *.lz
 *.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```
