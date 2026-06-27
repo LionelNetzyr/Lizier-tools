@@ -1,4 +1,3 @@
-```
 # Compiled and build artifacts
 *.pyc
 __pycache__/
@@ -14,12 +13,12 @@ build/
 target/
 
 # Dependencies
-node_modules/
-venv/
 .venv/
-.env
-.env.local
-.env.*
+venv/
+node_modules/
+.mypy_cache/
+.pytest_cache/
+.gradle/
 
 # Logs and temp files
 *.log
@@ -27,11 +26,18 @@ venv/
 *.swp
 *.swo
 
+# Environment
+.env
+.env.local
+*.env.*
+
 # Editors
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# System files
+# System
 .DS_Store
 Thumbs.db
 
@@ -63,94 +69,3 @@ htmlcov/
 *.tar.bz2
 *.tar.xz
 *.tar.zst
-
-# Python specific
-*.pyc
-__pycache__/
-*.pyo
-*.pyd
-.Python
-*.so
-
-# Node.js specific
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Java specific
-*.class
-*.jar
-*.war
-*.ear
-hs_err_pid*
-
-# C/C++ specific
-*.o
-*.a
-*.la
-*.lo
-*.so
-*.so.*
-*.dll
-*.dylib
-*.exe
-
-# Go specific
-*.exe
-*.test
-*.prof
-
-# Ruby specific
-*.gem
-*.rbc
-.bundle/
-
-# Rust specific
-*.o
-*.rlib
-
-# Gradle specific
-.gradle/
-build/
-
-# MyPy specific
-.mypy_cache/
-
-# PyTest specific
-.pytest_cache/
-
-# VSCode specific
-.vscode/
-*.code-workspace
-
-# IntelliJ specific
-.idea/
-*.iml
-*.iws
-*.ipr
-
-# Vim specific
-*.swp
-*.swo
-*~
-
-# Emacs specific
-*~
-\#*\#
-/.emacs.desktop
-/.emacs.desktop.lock
-
-# Backup files
-*.bak
-*.swp
-*~
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-```

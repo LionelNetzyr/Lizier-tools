@@ -18,7 +18,18 @@ export function parseSvg(txt: string): ParseResult {
   if (!txt) return emptyResult; const parser = new DOMParser(); const doc = parser.parseFromString(txt, 'image/svg+xml'); if (doc.querySelector('parsererror')) return emptyResult; const svgEl = doc.documentElement; if (!svgEl || svgEl.tagName.toLowerCase() !== 'svg') return emptyResult;
   const vbAttr = svgEl.getAttribute('viewBox'); const vbParts = (vbAttr || '').trim().split(/[\s,]+/).map(Number); const vbX = vbParts[0] || 0; const vbY = vbParts[1] || 0; let vbW = vbParts[2] || parseFloat(svgEl.getAttribute('width') || '0') || 1080; let vbH = vbParts[3] || parseFloat(svgEl.getAttribute('height') || '0') || 1080; if (!vbW) vbW = 1080; if (!vbH) vbH = 1080;
   const classMap = parseSvgStyles(svgEl); const gradMap = parseGradientDefs(svgEl); const clipperMap: Record<string, { d: string; mat: Matrix | null }> = {};
-  svgEl.querySelectorAll('clipPath').forEach(cp => { const id = cp.getAttribute('id'); if (!id) return; const child = Array.from(cp.childNodes).find((n): n is Element => !!(n as Element).tagName) as Element | undefined; if (!child) return; const d = child.tagName.toLowerCase() === 'path' ? child.getAttribute('d') : shapeToD(child); if (d) { const cpTransform = cp.getAttribute('clipPathTransform') || cp.getAttribute('transform'); const cpMat = cpTransform ? parseTransformMatrix(cpTransform) : null; clipperMap[id] = { d, mat: isIdentityMatrix(cpMat) ? null : cpMat }; } });
+  svgEl.querySelectorAll('clipPath').forEach(cp => { 
+    const id = cp.getAttribute('id'); 
+    if (!id) return; 
+    const child = Array.from(cp.childNodes).find((n): n is Element => !!(n as Element).tagName) as Element | undefined; 
+    if (!child) return; 
+    const d = child.tagName.toLowerCase() === 'path' ? child.getAttribute('d') : shapeToD(child); 
+    if (d) { 
+      const cpTransform = cp.getAttribute('clipPathTransform') || cp.getAttribute('transform'); 
+      const cpMat = cpTransform ? parseTransformMatrix(cpTransform) : null; 
+      clipperMap[id] = { d, mat: cpMat && !isIdentityMatrix(cpMat) ? cpMat : null }; 
+    } 
+  });
   const parsedPaths: ParsedPath[] = []; let pathIndex = 0; let hasAiMatrix = false; let strokeOnlyCount = 0; let hasOnlyRaster = true; let hasAnyShape = false;
   const allElements = svgEl.querySelectorAll('path,rect,circle,ellipse,polygon,polyline,line');
   allElements.forEach(el => {
