@@ -26,8 +26,12 @@ export default function Hero({ onFileLoaded, onOpenCode, onOpenGuide }: HeroProp
     if ((window as any).showOpenFilePicker) {
       try {
         const [fh] = await (window as any).showOpenFilePicker({
-          types: [{ description: 'SVG Files', accept: { 'image/svg+xml': ['.svg'] } }],
-          excludeAcceptAllOption: true, multiple: false,
+          types: [{ 
+            description: 'SVG Files', 
+            accept: { 'image/svg+xml': ['.svg'], 'application/xml': ['.svg'] } 
+          }],
+          excludeAcceptAllOption: true, 
+          multiple: false,
         });
         handleFile(await fh.getFile());
         return;
@@ -35,8 +39,8 @@ export default function Hero({ onFileLoaded, onOpenCode, onOpenGuide }: HeroProp
         if (e.name === 'AbortError') return;
       }
     }
-    const isAndroid = /android/i.test(navigator.userAgent);
-    fileInputRef.current?.setAttribute('accept', isAndroid ? '*/*' : '.svg');
+    // Fallback to traditional file input with strict SVG filter
+    fileInputRef.current?.setAttribute('accept', '.svg,image/svg+xml,application/xml');
     fileInputRef.current?.click();
   }
 
@@ -82,8 +86,17 @@ export default function Hero({ onFileLoaded, onOpenCode, onOpenGuide }: HeroProp
             <button className="hero-paste-link" onClick={onOpenGuide}>how to use</button>
           </div>
         </div>
-        <input ref={fileInputRef} type="file" accept=".svg" style={{ display: 'none' }}
-          onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }} />
+        <input 
+          ref={fileInputRef} 
+          type="file" 
+          accept=".svg,image/svg+xml,application/xml" 
+          style={{ display: 'none' }}
+          onChange={e => { 
+            const f = e.target.files?.[0]; 
+            if (f) handleFile(f); 
+            e.target.value = ''; 
+          }} 
+        />
       </div>
     </div>
   );
