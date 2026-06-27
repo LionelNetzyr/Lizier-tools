@@ -12,13 +12,90 @@ export function parseCssColor(raw: string): { r: number; g: number; b: number; a
   return null;
 }
 export function parseStyleObj(str: string | null): Record<string, string> { const o: Record<string, string> = {}; if (!str) return o; str.split(';').forEach(p => { const i = p.indexOf(':'); if (i < 0) return; o[p.slice(0, i).trim().toLowerCase()] = p.slice(i+1).trim(); }); return o; }
-export function parseSvgStyles(svgEl: Element): Record<string, Record<string, string>> { const classMap: Record<string, Record<string, string>> = {}; svgEl.querySelectorAll('style').forEach(styleEl => { const txt = styleEl.textContent || ''; const ruleRe = /([^{,]+)\{([^}]*)\}/g; let m: RegExpExecArray | null; while ((m = ruleRe.exec(txt)) !== null) { const selectors = m[1].split(','); const props = parseStyleObj(m[2]); selectors.forEach(sel => { const classes: string[] = sel.match(/\.([^\s.#:\[]+)/g) || []; classes.forEach(c => { const name = c.slice(1); if (!classMap[name]) classMap[name] = {}; Object.assign(classMap[name], props); }); }); } }); return classMap; }
+export function parseSvgStyles(svgEl: Element): Record<string, Record<string, string>> { 
+  const classMap: Record<string, Record<string, string>> = {}; 
+  const styleEls = svgEl.querySelectorAll('style');
+  const ruleRe = /([^{,]+)\{([^}]*)\}/g;
+  
+  for (let s = 0; s < styleEls.length; s++) {
+    const txt = styleEls[s].textContent || ''; 
+    let m: RegExpExecArray | null;
+    
+    while ((m = ruleRe.exec(txt)) !== null) { 
+      const selectors = m[1].split(','); 
+      const props = parseStyleObj(m[2]); 
+      
+      for (let selIdx = 0; selIdx < selectors.length; selIdx++) {
+        const sel = selectors[selIdx];
+        const classes: string[] = sel.match(/\.([^\s.#:\[]+)/g) || []; 
+        
+        for (let cIdx = 0; cIdx < classes.length; cIdx++) {
+          const name = classes[cIdx].slice(1); 
+          if (!classMap[name]) classMap[name] = {}; 
+          Object.assign(classMap[name], props); 
+        }
+      }
+    }
+  }
+  
+  return classMap; 
+}
 export function hexToAM(hex: string, alpha = 255): string { const c = parseCssColor(hex); if (!c) return 'ff000000'; const h2 = (n: number) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0'); return `${h2(alpha)}${h2(c.r)}${h2(c.g)}${h2(c.b)}`; }
 export function getFillColorV7(el: Element, classMap: Record<string, Record<string, string>>, gradMap: Record<string, GradientInfo>): ColorInfo | null {
-  let fillRaw: string | null = null; let opacityRaw: string | null = null; let node: Element | null = el;
-  while (node && node.getAttribute) { const sty = parseStyleObj(node.getAttribute('style')); if (!fillRaw && sty['fill']) { if (sty['fill'] !== 'inherit') fillRaw = sty['fill']; } if (!fillRaw) { const cls = (node.getAttribute('class') || '').trim().split(/\s+/); for (const c of cls) { if (classMap[c] && classMap[c]['fill']) { fillRaw = classMap[c]['fill']; break; } } } if (!fillRaw) { const f = node.getAttribute('fill'); if (f && f !== 'inherit') fillRaw = f; } if (!opacityRaw) { const op = sty['fill-opacity'] || node.getAttribute('fill-opacity'); if (op != null && op !== '') opacityRaw = op; } if (fillRaw && opacityRaw) break; node = node.parentElement; }
+  let fillRaw: string | null = null; 
+  let opacityRaw: string | null = null; 
+  let node: Element | null = el;
+  
+  while (node && node.getAttribute) { 
+    const sty = parseStyleObj(node.getAttribute('style')); 
+    
+    if (!fillRaw && sty['fill']) { 
+      if (sty['fill'] !== 'inherit') fillRaw = sty['fill']; 
+    } 
+    
+    if (!fillRaw) { 
+      const cls = (node.getAttribute('class') || '').trim().split(/\s+/); 
+      for (let cIdx = 0; cIdx < cls.length; cIdx++) {
+        const c = cls[cIdx];
+        if (classMap[c] && classMap[c]['fill']) { 
+          fillRaw = classMap[c]['fill']; 
+          break; 
+        } 
+      }
+    } 
+    
+    if (!fillRaw) { 
+      const f = node.getAttribute('fill'); 
+      if (f && f !== 'inherit') fillRaw = f; 
+    } 
+    
+    if (!opacityRaw) { 
+      const op = sty['fill-opacity'] || node.getAttribute('fill-opacity'); 
+      if (op != null && op !== '') opacityRaw = op; 
+    } 
+    
+    if (fillRaw && opacityRaw) break; 
+    node = node.parentElement; 
+  }
+  
   if (!fillRaw) fillRaw = '#000000';
+  
   const urlMatch = fillRaw.match(/^url\(#([^)]+)\)$/);
-  if (urlMatch && gradMap) { const gradId = urlMatch[1]; const grad = gradMap[gradId]; if (grad && grad.stops.length >= 1) { const startStop = grad.stops[0]; const endStop = grad.stops[grad.stops.length - 1]; return { amColor: startStop.amColor, cssHex: startStop.cssHex, isGradient: true, gradType: grad.type, gradStartAM: startStop.amColor, gradEndAM: endStop.amColor, gradStops: grad.stops, gradInfo: grad }; } return null; }
-  const c = parseCssColor(fillRaw); if (!c) return null; const opacity = opacityRaw != null ? Math.max(0, Math.min(1, parseFloat(opacityRaw))) : 1.0; const alpha = Math.round((c.a / 255) * opacity * 255); const h2 = (n: number) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0'); return { amColor: `${h2(alpha)}${h2(c.r)}${h2(c.g)}${h2(c.b)}`, cssHex: `#${h2(c.r)}${h2(c.g)}${h2(c.b)}` };
+  if (urlMatch && gradMap) { 
+    const gradId = urlMatch[1]; 
+    const grad = gradMap[gradId]; 
+    if (grad && grad.stops.length >= 1) { 
+      const startStop = grad.stops[0]; 
+      const endStop = grad.stops[grad.stops.length - 1]; 
+      return { amColor: startStop.amColor, cssHex: startStop.cssHex, isGradient: true, gradType: grad.type, gradStartAM: startStop.amColor, gradEndAM: endStop.amColor, gradStops: grad.stops, gradInfo: grad }; 
+    } 
+    return null; 
+  }
+  
+  const c = parseCssColor(fillRaw); 
+  if (!c) return null; 
+  const opacity = opacityRaw != null ? Math.max(0, Math.min(1, parseFloat(opacityRaw))) : 1.0; 
+  const alpha = Math.round((c.a / 255) * opacity * 255); 
+  const h2 = (n: number) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0'); 
+  return { amColor: `${h2(alpha)}${h2(c.r)}${h2(c.g)}${h2(c.b)}`, cssHex: `#${h2(c.r)}${h2(c.g)}${h2(c.b)}` };
 }

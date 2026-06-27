@@ -12,12 +12,34 @@ export default function Hero({ onFileLoaded, onOpenCode, onOpenGuide }: HeroProp
 
   function handleFile(file: File) {
     if (!file) return;
-    if (!file.name.toLowerCase().endsWith('.svg')) { alert('File must be .svg format'); return; }
+    
+    // Improved validation: check both extension and MIME type
+    const fileName = file.name.toLowerCase();
+    const isValidExtension = fileName.endsWith('.svg');
+    const isValidType = file.type.includes('svg') || file.type.includes('xml') || file.type === '';
+    
+    if (!isValidExtension && !isValidType) { 
+      alert(`Invalid file format. Expected SVG file, got: ${file.name}\n\nPlease select a valid .svg file.`); 
+      return; 
+    }
+    
     const reader = new FileReader();
     reader.onload = e => {
       const txt = e.target?.result as string;
+      
+      // Validate SVG content
+      const trimmed = txt.trim();
+      if (!trimmed.startsWith('<svg') && !trimmed.startsWith('<?xml')) {
+        alert('File does not appear to be a valid SVG. Please check the file content.');
+        return;
+      }
+      
       const name = file.name.replace(/\.svg$/i, '').replace(/[^a-zA-Z0-9_\-]/g, '_');
       onFileLoaded(txt, name);
+    };
+    reader.onerror = () => {
+      alert('Failed to read file. Please try again.');
+      console.error('FileReader error for:', file.name);
     };
     reader.readAsText(file);
   }
@@ -26,8 +48,12 @@ export default function Hero({ onFileLoaded, onOpenCode, onOpenGuide }: HeroProp
     if ((window as any).showOpenFilePicker) {
       try {
         const [fh] = await (window as any).showOpenFilePicker({
-          types: [{ description: 'SVG Files', accept: { 'image/svg+xml': ['.svg'] } }],
-          excludeAcceptAllOption: true, multiple: false,
+          types: [{ 
+            description: 'SVG Files', 
+            accept: { 'image/svg+xml': ['.svg'], 'application/xml': ['.svg'] } 
+          }],
+          excludeAcceptAllOption: true, 
+          multiple: false,
         });
         handleFile(await fh.getFile());
         return;
@@ -35,8 +61,8 @@ export default function Hero({ onFileLoaded, onOpenCode, onOpenGuide }: HeroProp
         if (e.name === 'AbortError') return;
       }
     }
-    const isAndroid = /android/i.test(navigator.userAgent);
-    fileInputRef.current?.setAttribute('accept', isAndroid ? '*/*' : '.svg');
+    // Fallback to traditional file input with strict SVG filter
+    fileInputRef.current?.setAttribute('accept', '.svg,image/svg+xml,application/xml');
     fileInputRef.current?.click();
   }
 
@@ -49,9 +75,21 @@ export default function Hero({ onFileLoaded, onOpenCode, onOpenGuide }: HeroProp
       hero.classList.remove('drag-over');
     };
     const onDrop = (e: DragEvent) => {
-      e.preventDefault(); hero.classList.remove('drag-over');
+      e.preventDefault(); 
+      hero.classList.remove('drag-over');
       const file = e.dataTransfer?.files[0];
-      if (file && file.name.endsWith('.svg')) handleFile(file);
+      if (file) {
+        // Validate dropped file
+        const fileName = file.name.toLowerCase();
+        const isValidExtension = fileName.endsWith('.svg');
+        const isValidType = file.type.includes('svg') || file.type.includes('xml') || file.type === '';
+        
+        if (!isValidExtension && !isValidType) {
+          alert(`Invalid file dropped. Please drop a valid .svg file.`);
+          return;
+        }
+        handleFile(file);
+      }
     };
     document.addEventListener('dragover', onDragOver);
     document.addEventListener('dragleave', onDragLeave);
@@ -82,8 +120,17 @@ export default function Hero({ onFileLoaded, onOpenCode, onOpenGuide }: HeroProp
             <button className="hero-paste-link" onClick={onOpenGuide}>how to use</button>
           </div>
         </div>
-        <input ref={fileInputRef} type="file" accept=".svg" style={{ display: 'none' }}
-          onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }} />
+        <input 
+          ref={fileInputRef} 
+          type="file" 
+          accept=".svg,image/svg+xml,application/xml" 
+          style={{ display: 'none' }}
+          onChange={e => { 
+            const f = e.target.files?.[0]; 
+            if (f) handleFile(f); 
+            e.target.value = ''; 
+          }} 
+        />
       </div>
     </div>
   );

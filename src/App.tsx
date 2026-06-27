@@ -22,14 +22,82 @@ export default function App() {
   const [outputXml, setOutputXml] = useState(''); const [statusText, setStatusText] = useState(''); const [outFilename, setOutFilename] = useState(''); const [outputVisible, setOutputVisible] = useState(false); const [converting, setConverting] = useState(false);
   const [hasAiMatrix, setHasAiMatrix] = useState(false); const [strokeOnlyCount, setStrokeOnlyCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null); const appContentRef = useRef<HTMLDivElement>(null);
-  const loadSvg = useCallback((txt: string, fileName: string) => { try { const result = parseSvg(txt); if (!result.parsedPaths.length && !result.hasOnlyRaster) { alert('No convertible shapes found.'); return; } setParsedPaths(result.parsedPaths); setSvgCloneHtml(result.svgCloneHtml); setSvgDims(result.svgDims); setSvgText(txt); setSelectedIndices(new Array(result.parsedPaths.length).fill(true)); setHasAiMatrix(result.hasAiMatrix); setStrokeOnlyCount(result.strokeOnlyCount); setShowApp(true); setOutputXml(''); setOutputVisible(false); setStatusText(''); const dims = result.svgDims; if (dims && dims.vbW > 0 && dims.vbH > 0) { setSettings(s => ({ ...s, targetW: Math.round(dims.vbW), targetH: Math.round(dims.vbH) })); setActivePreset('svg'); setCustomMode(false); } else { setActivePreset(null); } if (fileName) { const displayName = fileName.endsWith('.svg') ? fileName : fileName + '.svg'; setUploadedFileName(displayName); setSettings(s => ({ ...s, svgFileName: fileName, projectName: s.projectName || fileName })); } setTimeout(() => { appContentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 200); } catch (e) { console.error('SVG parse error:', e); alert('Failed to parse SVG.'); } }, []);
+  const loadSvg = useCallback((txt: string, fileName: string) => { 
+    try { 
+      // Clear previous state first to prevent stale data
+      setParsedPaths([]);
+      setSvgCloneHtml('');
+      setSvgDims(null);
+      setSelectedIndices([]);
+      setOutputXml('');
+      setOutputVisible(false);
+      setStatusText('');
+      
+      const result = parseSvg(txt); 
+      if (!result.parsedPaths.length && !result.hasOnlyRaster) { 
+        alert('No convertible shapes found.'); 
+        return; 
+      } 
+      
+      setParsedPaths(result.parsedPaths); 
+      setSvgCloneHtml(result.svgCloneHtml); 
+      setSvgDims(result.svgDims); 
+      setSvgText(txt); 
+      setSelectedIndices(new Array(result.parsedPaths.length).fill(true)); 
+      setHasAiMatrix(result.hasAiMatrix); 
+      setStrokeOnlyCount(result.strokeOnlyCount); 
+      setShowApp(true); 
+      
+      const dims = result.svgDims; 
+      if (dims && dims.vbW > 0 && dims.vbH > 0) { 
+        setSettings(s => ({ ...s, targetW: Math.round(dims.vbW), targetH: Math.round(dims.vbH) })); 
+        setActivePreset('svg'); 
+        setCustomMode(false); 
+      } else { 
+        setActivePreset(null); 
+      } 
+      
+      if (fileName) { 
+        const displayName = fileName.endsWith('.svg') ? fileName : fileName + '.svg'; 
+        setUploadedFileName(displayName); 
+        // Always override projectName with new filename (fix: don't use old value)
+        setSettings(s => ({ ...s, svgFileName: fileName, projectName: fileName })); 
+      } 
+      
+      setTimeout(() => { 
+        appContentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+      }, 200); 
+    } catch (e) { 
+      console.error('SVG parse error:', e); 
+      alert('Failed to parse SVG: ' + (e as Error).message); 
+      // Reset state on error
+      handleClear();
+    } 
+  }, []);
   function handleCodeInput(txt: string) { setCodeValue(txt); const trimmed = txt.trim(); if (trimmed.startsWith('<svg') || trimmed.startsWith('<?xml')) loadSvg(txt, 'pasted_svg'); }
   function handleToggle(index: number, checked: boolean) { setSelectedIndices(prev => { const next = [...prev]; next[index] = checked; return next; }); }
   function handleSelectAll() { setSelectedIndices(new Array(parsedPaths.length).fill(true)); }
   function handleSelectNone() { setSelectedIndices(new Array(parsedPaths.length).fill(false)); }
   function handleSettingsChange(partial: Partial<ConvertSettings>) { setSettings(s => ({ ...s, ...partial })); }
   function handleConvert() { if (!parsedPaths.length) return; setConverting(true); setTimeout(() => { try { const result = processAM(parsedPaths, selectedIndices, settings, svgText); if (!result.xml) { setStatusText(result.statusText || 'No layers selected.'); setOutputXml(''); setOutputVisible(true); } else { setOutputXml(result.xml); setStatusText(result.statusText); setOutFilename(result.filename); setOutputVisible(true); } } catch (e) { console.error('Convert error:', e); setStatusText('❌ Conversion error — check console'); setOutputVisible(true); } setConverting(false); }, 10); }
-  function handleClear() { setParsedPaths([]); setSvgCloneHtml(''); setSvgDims(null); setSvgText(''); setSelectedIndices([]); setShowApp(false); setOutputXml(''); setOutputVisible(false); setStatusText(''); setUploadedFileName(''); setCodeValue(''); setSettings(DEFAULT_SETTINGS); setActivePreset(null); setCustomMode(false); }
+  function handleClear() { 
+    setParsedPaths([]); 
+    setSvgCloneHtml(''); 
+    setSvgDims(null); 
+    setSvgText(''); 
+    setSelectedIndices([]); 
+    setShowApp(false); 
+    setOutputXml(''); 
+    setOutputVisible(false); 
+    setStatusText(''); 
+    setUploadedFileName(''); 
+    setCodeValue(''); 
+    setHasAiMatrix(false);
+    setStrokeOnlyCount(0);
+    setSettings(DEFAULT_SETTINGS); 
+    setActivePreset(null); 
+    setCustomMode(false); 
+  }
   const selectedCount = selectedIndices.filter(Boolean).length;
   const uniqueColors = new Set(parsedPaths.filter((_, i) => selectedIndices[i]).map(p => p.color?.cssHex || '').filter(Boolean)).size;
   useEffect(() => { const handler = (e: ClipboardEvent) => { const txt = e.clipboardData?.getData('text/plain') || ''; const trimmed = txt.trim(); if (trimmed.startsWith('<svg') || trimmed.startsWith('<?xml')) { e.preventDefault(); setCodeValue(txt); setCodeOpen(true); loadSvg(txt, 'pasted_svg'); } }; document.addEventListener('paste', handler); return () => document.removeEventListener('paste', handler); }, [loadSvg]);

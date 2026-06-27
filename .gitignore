@@ -1,36 +1,27 @@
+```
 # Dependencies
 node_modules/
-.pnp
-.pnp.js
-
-# Build output
-dist/
-build/
-
-# Vite
-*.local
-.vite/
-
-# Editor
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
 
 # Environment
 .env
 .env.local
-.env.production
+.env.*
 
-# Logs
+# Logs and temp files
 *.log
-npm-debug.log*
+*.tmp
 
-# Backup files
-*.backup
-src/lib_backup/
+# Editors
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+.env
+```

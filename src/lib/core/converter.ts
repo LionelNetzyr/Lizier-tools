@@ -26,7 +26,18 @@ export function processAM(parsedPaths: ParsedPath[], selectedIndices: boolean[],
   const vbParts = (svgEl.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(parseFloat); const vbX = vbParts[0] || 0, vbY = vbParts[1] || 0; const vbW = vbParts[2] || parseFloat(svgEl.getAttribute('width') || '1080'); const vbH = vbParts[3] || parseFloat(svgEl.getAttribute('height') || '1080'); const cx = vbX + vbW / 2, cy = vbY + vbH / 2; const globalScale = Math.min(targetW / vbW, targetH / vbH); const tcx = targetW / 2, tcy = targetH / 2;
   const classMap = parseSvgStyles(svgEl); const gradMap = parseGradientDefs(svgEl);
   const clipperMap: Record<string, { d: string; mat: Matrix | null }> = {};
-  svgEl.querySelectorAll('clipPath').forEach(cp => { const id = cp.getAttribute('id'); if (!id) return; const child = Array.from(cp.childNodes).find((n): n is Element => !!(n as Element).tagName) as Element | undefined; if (!child) return; const d = child.tagName.toLowerCase() === 'path' ? child.getAttribute('d') : shapeToD(child); if (d) { const cpMat = cp.getAttribute('transform') ? getAccumulatedTransform(cp, svgEl) : null; clipperMap[id] = { d, mat: isIdentityMatrix(cpMat) ? null : cpMat }; } });
+  svgEl.querySelectorAll('clipPath').forEach(cp => { 
+    const id = cp.getAttribute('id'); 
+    if (!id) return; 
+    const child = Array.from(cp.childNodes).find((n): n is Element => !!(n as Element).tagName) as Element | undefined; 
+    if (!child) return; 
+    const d = child.tagName.toLowerCase() === 'path' ? child.getAttribute('d') : shapeToD(child); 
+    if (d) { 
+      const cpTransform = cp.getAttribute('transform');
+      const cpMat = cpTransform ? getAccumulatedTransform(cp, svgEl) : null; 
+      clipperMap[id] = { d, mat: cpMat && !isIdentityMatrix(cpMat) ? cpMat : null }; 
+    } 
+  });
   const docPaths = Array.from(svgEl.querySelectorAll('path,rect,circle,ellipse,polygon,polyline,line'));
   const idRef = { val: 2000000000 }; let totalShapes = 0; const selectedItems: ShapeItem[] = [];
   parsedPaths.forEach((p, i) => {
