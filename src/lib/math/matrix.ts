@@ -23,8 +23,21 @@ export function applyMatrix(mat: Matrix, x: number, y: number): { x: number; y: 
 export function isIdentityMatrix(m: Matrix): boolean { return Math.abs(m.a - 1) < 1e-6 && Math.abs(m.b) < 1e-6 && Math.abs(m.c) < 1e-6 && Math.abs(m.d - 1) < 1e-6 && Math.abs(m.e) < 1e-6 && Math.abs(m.f) < 1e-6; }
 export function isSimpleMatrix(mat: Matrix): boolean { return Math.abs(mat.b) < 0.0001 && Math.abs(mat.c) < 0.0001; }
 export function getAccumulatedTransform(el: Element, rootEl: Element | null): Matrix {
-  const matrices: Matrix[] = []; let node: Element | null = el;
-  while (node && node !== rootEl) { const t = node.getAttribute('transform'); if (t) matrices.unshift(parseTransformMatrix(t)); node = node.parentElement; }
+  const matrices: Matrix[] = []; 
+  let node: Element | null = el;
+  
+  // Collect all transforms from element up to (but not including) root
+  while (node && node !== rootEl && node.parentElement) { 
+    const t = node.getAttribute('transform'); 
+    if (t) {
+      // Prepend transform (transforms are applied right-to-left in SVG)
+      matrices.unshift(parseTransformMatrix(t)); 
+    }
+    node = node.parentElement; 
+  }
+  
   if (!matrices.length) return IDENTITY_MATRIX;
+  
+  // Multiply all matrices in order
   return matrices.reduce((acc, m) => multiplyMatrices(acc, m), IDENTITY_MATRIX);
 }

@@ -89,7 +89,16 @@ export function transformPath(d: string, cx: number, cy: number, globalScale: nu
   
   // Inline point transformation for performance
   const pt = mat 
-    ? (x: number, y: number) => ({ x: (mat.a * x + mat.c * y + mat.e - cx) * globalScale, y: (mat.b * x + mat.d * y + mat.f - cy) * globalScale })
+    ? (x: number, y: number) => {
+        // Apply matrix transformation: first apply the matrix, then center and scale
+        const transformedX = mat.a * x + mat.c * y + mat.e;
+        const transformedY = mat.b * x + mat.d * y + mat.f;
+        // Then apply canvas centering and scaling
+        return { 
+          x: (transformedX - cx) * globalScale, 
+          y: (transformedY - cy) * globalScale 
+        };
+      }
     : (x: number, y: number) => ({ x: (x - cx) * globalScale, y: (y - cy) * globalScale });
   
   const segments: Array<{ cmd: string; nums: number[] }> = []; 
